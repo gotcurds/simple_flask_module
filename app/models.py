@@ -42,7 +42,7 @@ class ServiceTickets(Base):
     service_date: Mapped[date] = mapped_column(Date, default=datetime.now)
     service_description: Mapped[str] = mapped_column(String(2000),nullable=False)
     price: Mapped[float] = mapped_column(Float(20), nullable=False)
-    vin: Mapped[str] = mapped_column(String(50),unique=True,nullable=False)
+    vin: Mapped[str] = mapped_column(String(50),nullable=False)
 
     
     customer: Mapped["Customers"] = relationship("Customers", back_populates="service_ticket")
