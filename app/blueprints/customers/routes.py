@@ -1,9 +1,29 @@
 from app.blueprints.customers import customers_bp
-from .schemas import user_schema, users_schema
+from .schemas import user_schema, users_schema, login_schema
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import Customers, db
 from app.extensions import limiter
+from werkzeug.security import generate_password_hash, check_password_hash
+from app.util.auth import encode_token
+
+
+@customers_bp.route("/login", methods=["POST"])
+def login():
+    try:
+        data = login_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    
+    customer = db.session.query(Customers).where(Customers.email==data['email'])
+
+    if customer and check_password_hash(customer.password, data["password"]):
+        token = encode_token(customer.id, role=customer.role)
+        return jsonify({
+            "message": f'Welcome {customer.username}',
+            "token": token
+        }), 200
+
 
 @customers_bp.route("/", methods=['POST'])
 def create_customer():
@@ -31,6 +51,7 @@ def read_customer(customer_id):
 
 
 @customers_bp.route("/<int:customer_id>", methods=['PUT'])
+@token_required
 def update_user(customer_id):
     customer_id = request.customer_id
     customer = db.session.get(Customers, customer_id)
@@ -43,7 +64,7 @@ def update_user(customer_id):
     except ValidationError as e:
         return jsonify({"message" : e.messages}), 400
     
-    # customer_data['password'] = generate_password_hash(customer_data['password'])
+    customer_data['password'] = generate_password_hash(customer_data['password'])
 
     for key, value in customer_data.items():
         setattr(customer, key, value)
