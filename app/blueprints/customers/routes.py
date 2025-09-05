@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 from app.models import Customers, db
 from app.extensions import limiter
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.util.auth import encode_token
+from app.util.auth import encode_token, token_required
 
 
 @customers_bp.route("/login", methods=["POST"])
@@ -15,7 +15,7 @@ def login():
     except ValidationError as e:
         return jsonify(e.messages), 400
     
-    customer = db.session.query(Customers).where(Customers.email==data['email'])
+    customer = db.session.query(Customers).where(Customers.email==data['email']).first()
 
     if customer and check_password_hash(customer.password, data["password"]):
         token = encode_token(customer.id, role=customer.role)
@@ -23,6 +23,8 @@ def login():
             "message": f'Welcome {customer.username}',
             "token": token
         }), 200
+    
+    return jsonify("Invlaid username or password!"), 403
 
 
 @customers_bp.route("/", methods=['POST'])
@@ -50,11 +52,11 @@ def read_customer(customer_id):
     return user_schema.jsonify(customer), 200
 
 
-@customers_bp.route("/<int:customer_id>", methods=['PUT'])
+@customers_bp.route("/my-profile", methods=['PUT'])
 @token_required
-def update_user(customer_id):
-    customer_id = request.customer_id
-    customer = db.session.get(Customers, customer_id)
+def update_user():
+    
+    customer = db.session.get(Customers, request.customer_id)
 
     if not customer:
         return jsonify({"message": "user not found"}), 404

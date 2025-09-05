@@ -59,5 +59,6 @@ class Mechanics(Base):
     email: Mapped[str] = mapped_column(String(360), unique=True, nullable=False)
     salary: Mapped[float] = mapped_column(Float(20), nullable=False)
     address: Mapped[str] = mapped_column(String(500),nullable=False)
+    password: Mapped[str] = mapped_column(String(120),nullable=False)
 
     service_ticket: Mapped[list["ServiceTickets"]] = relationship("ServiceTickets",secondary=service_mechanics, back_populates="mechanic")
