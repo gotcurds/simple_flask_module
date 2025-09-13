@@ -15,7 +15,9 @@ def create_mechanic():
     except ValidationError as e:
         return jsonify(e.messages), 400
 
+    data['password'] = generate_password_hash(data['password'])
     new_mechanic = Mechanics(**data)
+    
     db.session.add(new_mechanic)
     db.session.commit()
     return mechanic_schema.jsonify(new_mechanic), 201
@@ -67,7 +69,7 @@ def login():
     if mechanic and check_password_hash(mechanic.password, data["password"]):
         token = encode_token(mechanic.id, role=mechanic.role)
         return jsonify({
-            "message": f'Welcome {mechanic.username}',
+            "message": f'Welcome {mechanic.first_name}',
             "token": token
         }), 200
     
