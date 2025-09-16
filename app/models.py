@@ -22,6 +22,13 @@ service_mechanics = Table(
     Column("mechanics_id",Integer, ForeignKey("mechanics.id"))
 )
 
+ticket_parts = Table(
+    "ticket_parts",
+    Base.metadata,
+    Column("service_ticket_id", Integer, ForeignKey("service_tickets.id")),
+    Column("part_id", Integer, ForeignKey("parts.id"))
+)
+
 class Customers(Base):
     __tablename__ = "customers"
 
@@ -49,17 +56,37 @@ class ServiceTickets(Base):
     
     customer: Mapped["Customers"] = relationship("Customers", back_populates="service_ticket")
     mechanic: Mapped[list["Mechanics"]] = relationship("Mechanics", secondary=service_mechanics, back_populates="service_ticket")
+    parts: Mapped[list["Part"]] = relationship(secondary=ticket_parts, back_populates="service_ticket")
 
 class Mechanics(Base):
     __tablename__ = "mechanics"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    first_name: Mapped[str] = mapped_column(String(160),nullable=False)
-    last_name: Mapped[str] = mapped_column(String(160),nullable=False)
+    first_name: Mapped[str] = mapped_column(String(160),nullable=True)
+    last_name: Mapped[str] = mapped_column(String(160),nullable=True)
     email: Mapped[str] = mapped_column(String(360), unique=True, nullable=False)
-    salary: Mapped[float] = mapped_column(Float(20), nullable=False)
-    address: Mapped[str] = mapped_column(String(500),nullable=False)
+    salary: Mapped[float] = mapped_column(Float(20), nullable=True)
+    address: Mapped[str] = mapped_column(String(500),nullable=True)
     password: Mapped[str] = mapped_column(String(120),nullable=False)
     role: Mapped[str] = mapped_column(String(50), default='mechanic')
 
     service_ticket: Mapped[list["ServiceTickets"]] = relationship("ServiceTickets",secondary=service_mechanics, back_populates="mechanic")
+
+class InventoryPartDescription(Base):
+    __tablename__ = "inventory_part_descriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    price: Mapped[float] = mapped_column(Float(20), nullable=False)
+    
+    part: Mapped[list["Part"]] = relationship("Part", back_populates="inventory_description")
+
+class Part(Base):
+    __tablename__ = "parts"
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    desc_id: Mapped[int] = mapped_column(ForeignKey("inventory_part_descriptions.id"))
+    ticket_id: Mapped[int] = mapped_column(ForeignKey("service_tickets.id"), nullable=True)
+
+    inventory_description: Mapped["InventoryPartDescription"] = relationship("InventoryPartDescription", back_populates="part")
+    service_ticket: Mapped[list["ServiceTickets"]] = relationship(secondary=ticket_parts, back_populates="parts")

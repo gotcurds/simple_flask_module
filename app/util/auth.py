@@ -26,15 +26,18 @@ def token_required(f):
         token = None
 
         if "Authorization" in request.headers:
-            token = request.headers["Authorization"].split()[1]
+            token = request.headers["Authorization"].split(" ")[1]
         
         if not token:
-            return jsonify({"error": "toekn missing from authorization headers"}), 401
+            return jsonify({"error": "token missing from authorization headers"}), 401
 
         try:
-
+            # Decode the token to get the payload
             data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            print(data)
+            current_user_id = data['sub']
+            user_role = data['role']
+            setattr(request, 'user_id', current_user_id)
+            setattr(request, 'role', user_role)
 
         except jose.exceptions.ExpiredSignatureError:
             return jsonify({"message": "token is expired"}), 403

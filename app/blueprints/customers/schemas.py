@@ -7,4 +7,11 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
-login_schema = UserSchema(exclude=['first_name', 'last_name', 'phone', 'address', 'username'])
+
+
+class UserLoginSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Customers
+        only = ("email", "password")
+
+login_schema = UserLoginSchema()

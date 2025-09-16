@@ -2,10 +2,11 @@ from app.blueprints.customers import customers_bp
 from .schemas import user_schema, users_schema, login_schema
 from flask import request, jsonify
 from marshmallow import ValidationError
-from app.models import Customers, db
+from app.models import Customers, db, ServiceTickets
 from app.extensions import limiter
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.util.auth import encode_token, token_required
+from sqlalchemy import func
 
 
 @customers_bp.route("/login", methods=["POST"])
@@ -18,13 +19,13 @@ def login():
     customer = db.session.query(Customers).where(Customers.email==data['email']).first()
 
     if customer and check_password_hash(customer.password, data["password"]):
-        token = encode_token(customer.id, role=customer.role)
+        token = encode_token(customer.id, role="customer")
         return jsonify({
-            "message": f'Welcome {customer.username}',
+            "message": f'Welcome {customer.first_name}',
             "token": token
         }), 200
     
-    return jsonify("Invlaid username or password!"), 403
+    return jsonify("Invalid username or password!"), 403
 
 
 @customers_bp.route("/", methods=['POST'])
@@ -41,8 +42,11 @@ def create_customer():
 
 @customers_bp.route("/", methods=['GET'])
 def read_customers():
-    customers = db.session.query(Customers).all()
-    return users_schema.jsonify(customers), 200
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
+
+    customers = db.session.query(Customers).paginate(page,per_page)
+    return users_schema.jsonify(customers.items), 200
     
 
 
@@ -77,8 +81,39 @@ def update_user():
 
 @customers_bp.route('/<int:customer_id>', methods=['DELETE'])
 @limiter.limit("3 per day")
+@token_required
 def delete_customer(customer_id):
     customer = db.session.get(Customers, customer_id)
-    db.session.delete(customer)
-    db.session.commit()
-    return jsonify({"message": f"Successfully deleted user {customer_id}"}), 200
+    if not customer:
+        return jsonify({"message": "that customer is not in the database"}), 404
+    
+    if customer_id != int(request.user_id):
+        return jsonify({"message": "we're sorry it seems as if you don't have access to that account."}), 403
+    else:
+        db.session.delete(customer)
+        db.session.commit()
+        return jsonify({"message": f"Successfully deleted user {customer_id}"}), 200
+
+
+@customers_bp.route("/big-spenders", methods=["GET"])
+def get_top_customers():
+    # group by customer, sum the prices, and order by the total sum.
+    customer_data = db.session.query(
+        Customers.first_name,
+        Customers.last_name,
+        func.sum(ServiceTickets.price).label("total_spent")).join(ServiceTickets).group_by(Customers.id).order_by(func.sum(ServiceTickets.price).desc()).all()
+
+    results = [
+        {
+            "first_name": row.first_name,
+            "last_name": row.last_name,
+            "total_spent": float(row.total_spent)
+        }
+        for row in customer_data
+    ]
+
+    return jsonify(results), 200
+    
+
+
+    
