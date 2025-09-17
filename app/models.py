@@ -85,7 +85,7 @@ class Part(Base):
     __tablename__ = "parts"
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    desc_id: Mapped[int] = mapped_column(ForeignKey("inventory_part_descriptions.id"))
+    desc_id: Mapped[int] = mapped_column(ForeignKey("inventory_part_descriptions.id", ondelete="CASCADE"))
     ticket_id: Mapped[int] = mapped_column(ForeignKey("service_tickets.id"), nullable=True)
 
     inventory_description: Mapped["InventoryPartDescription"] = relationship("InventoryPartDescription", back_populates="part")
