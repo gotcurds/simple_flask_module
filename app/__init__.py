@@ -6,21 +6,22 @@ from .blueprints.mechanics import mechanics_bp
 from .blueprints.tickets import service_tickets_bp
 from .blueprints.parts import parts_bp
 from flasgger import Swagger
-from config import Config, TestConfig
+from config import DevelopmentConfig, TestConfig, ProductionConfig
 
-def create_app(config_class=Config):
+def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
     
-    # Check if the config_class is a string and map it to the correct class
+    # Check if the config_class is a string to handle tests
     if isinstance(config_class, str):
         if config_class == 'test_config':
             app.config.from_object(TestConfig)
         else:
             # Handle other string-based configurations if needed
-            app.config.from_object(config_class)
+            app.config.from_object(DevelopmentConfig)
     else:
         # If it's a class object, use it directly
         app.config.from_object(config_class)
+
 
     db.init_app(app)
     ma.init_app(app)
@@ -33,3 +34,7 @@ def create_app(config_class=Config):
     app.register_blueprint(parts_bp, url_prefix='/parts')
     
     return app
+
+if __name__ == '__main__':
+    app = create_app()
+    app.run()

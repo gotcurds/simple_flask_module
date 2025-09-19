@@ -3,6 +3,7 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class DevelopmentConfig:
+    """Configuration for local development."""
     SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"
     DEBUG = True
 
@@ -19,4 +20,5 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
 
 class ProductionConfig:
+    """Configuration for production environment."""
     pass
