@@ -6,56 +6,61 @@ from . import parts_bp
 from .schemas import inventory_part_description_schema, part_schema, parts_schema, inventory_part_descriptions_schema
 
 
-# Swag Defs
-# Create/Update Payload for Part Descriptions
-PartDescriptionPayload = {
-    "PartDescriptionPayload": {
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"},
-            "supplier_id": {"type": "integer"},
-            "inventory_count": {"type": "integer"}
+# --- FLASGGER CONFIGURATION (CRITICAL: Definitions must be here for reference) ---
+parts_bp.config = {
+    "specs": [
+        {
+            "endpoint": 'partsspec',
+            "route": '/partsspec.json',
+            "rule_filter": lambda rule: rule.endpoint.startswith(parts_bp.name),
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "definitions": {
+        # Payload for Part Descriptions
+        "PartDescriptionPayload": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "price": {"type": "number"},
+                "supplier_id": {"type": "integer"},
+                "inventory_count": {"type": "integer"}
+            },
+            "required": ["name", "price", "supplier_id", "inventory_count"]
         },
-        "required": ["name", "price", "supplier_id", "inventory_count"]
-    }
-}
 
-# Payload for adding a physical part
-PhysicalPartPayload = {
-    "PhysicalPartPayload": {
-        "type": "object",
-        "properties": {
-            "desc_id": {"type": "integer"}
+        # Payload for adding a physical part
+        "PhysicalPartPayload": {
+            "type": "object",
+            "properties": {
+                "desc_id": {"type": "integer"}
+            },
+            "required": ["desc_id"]
         },
-        "required": ["desc_id"]
-    }
-}
 
-# Response for a single Part Description
-PartDescriptionResponse = {
-    "PartDescriptionResponse": {
-        "type": "object",
-        "properties": {
-            "id": {"type": "integer"},
-            "name": {"type": "string"},
-            "price": {"type": "number"},
-            "supplier_id": {"type": "integer"},
-            "inventory_count": {"type": "integer"}
+        # Response for a single Part Description
+        "PartDescriptionResponse": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "name": {"type": "string"},
+                "price": {"type": "number"},
+                "supplier_id": {"type": "integer"},
+                "inventory_count": {"type": "integer"}
+            }
+        },
+
+        # Response for a single physical Part
+        "PartResponse": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "desc_id": {"type": "integer"}
+            }
         }
     }
 }
-
-# Response for a single physical Part
-PartResponse = {
-    "PartResponse": {
-        "type": "object",
-        "properties": {
-            "id": {"type": "integer"},
-            "desc_id": {"type": "integer"}
-        }
-    }
-}
+# --- END FLASGGER CONFIGURATION ---
 
 @parts_bp.route("/", methods=["POST"])
 @token_required
@@ -75,7 +80,7 @@ def create_inventory_part_description():
       - in: body
         name: body
         schema:
-          id: PartDescriptionPayload
+          # Correct Flasgger syntax for referencing a definition
           $ref: '#/definitions/PartDescriptionPayload'
     responses:
       201:
@@ -119,7 +124,7 @@ def add_physical_part():
       - in: body
         name: body
         schema:
-          id: PhysicalPartPayload
+          # Correct Flasgger syntax for referencing a definition
           $ref: '#/definitions/PhysicalPartPayload'
     responses:
       201:
@@ -229,7 +234,7 @@ def update_part(part_id):
       - in: body
         name: body
         schema:
-          id: PhysicalPartPayload
+          # Correct Flasgger syntax for referencing a definition
           $ref: '#/definitions/PhysicalPartPayload'
     responses:
       200:
@@ -310,4 +315,3 @@ def delete_part(part_id):
     db.session.delete(part_to_delete)
     db.session.commit()
     return jsonify({"message": f"Successfully deleted part {part_id}."}), 200
-

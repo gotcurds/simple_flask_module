@@ -8,54 +8,56 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.util.auth import encode_token, token_required
 from sqlalchemy import func
 
-# Swag Defs
-LoginPayload = {
-    "LoginPayload": {
-        "type": "object",
-        "properties": {
-            "email": {"type": "string"},
-            "password": {"type": "string"}
+# --- FLASGGER CONFIGURATION ---
+# All schemas referenced by this blueprint must be defined here for Flasgger to build the spec.
+customers_bp.config = {
+    "specs": [
+        {
+            "endpoint": 'customerspec',
+            "route": '/customerspec.json',
+            "rule_filter": lambda rule: rule.endpoint.startswith(customers_bp.name),
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "definitions": {
+        "LoginPayload": {
+            "type": "object",
+            "properties": {
+                "email": {"type": "string", "description": "Customer's login email."},
+                "password": {"type": "string", "description": "Customer's password."}
+            },
+            "required": ["email", "password"]
         },
-        "required": ["email", "password"]
-    }
-}
-
-CustomerPayload = {
-    "CustomerPayload": {
-        "type": "object",
-        "properties": {
-            "first_name": {"type": "string"},
-            "last_name": {"type": "string"},
-            "email": {"type": "string"},
-            "password": {"type": "string"}
+        "CustomerPayload": {
+            "type": "object",
+            "properties": {
+                "first_name": {"type": "string"},
+                "last_name": {"type": "string"},
+                "email": {"type": "string"},
+                "password": {"type": "string"}
+            },
+            "required": ["first_name", "last_name", "email", "password"]
         },
-        "required": ["first_name", "last_name", "email", "password"]
-    }
-}
-
-CustomerResponse = {
-    "CustomerResponse": {
-        "type": "object",
-        "properties": {
-            "id": {"type": "integer"},
-            "first_name": {"type": "string"},
-            "last_name": {"type": "string"},
-            "email": {"type": "string"}
+        "CustomerResponse": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer"},
+                "first_name": {"type": "string"},
+                "last_name": {"type": "string"},
+                "email": {"type": "string"}
+            }
+        },
+        "TopSpenderResponse": {
+            "type": "object",
+            "properties": {
+                "first_name": {"type": "string"},
+                "last_name": {"type": "string"},
+                "total_spent": {"type": "number", "format": "float"}
+            }
         }
     }
 }
-
-TopSpenderResponse = {
-    "TopSpenderResponse": {
-        "type": "object",
-        "properties": {
-            "first_name": {"type": "string"},
-            "last_name": {"type": "string"},
-            "total_spent": {"type": "number"}
-        }
-    }
-}
-
+# --- END FLASGGER CONFIGURATION ---
 
 @customers_bp.route("/login", methods=["POST"])
 def login():
@@ -72,7 +74,6 @@ def login():
       - in: body
         name: body
         schema:
-          id: LoginPayload
           $ref: '#/definitions/LoginPayload'
     responses:
       200:
@@ -118,7 +119,6 @@ def create_customer():
       - in: body
         name: body
         schema:
-          id: CustomerPayload
           $ref: '#/definitions/CustomerPayload'
     responses:
       201:
@@ -164,7 +164,7 @@ def read_customers():
         schema:
           type: array
           items:
-            $ref: '#/definitions/CustomerResponse'
+            $ref: '#/definitions/CustomerResponse' 
     """
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
@@ -238,11 +238,13 @@ def update_user():
         return jsonify({"message": "user not found"}), 404
     
     try:
+        # We assume user_schema.load handles partial updates if the data is incomplete
         customer_data = user_schema.load(request.json)
     except ValidationError as e:
         return jsonify({"message" : e.messages}), 400
     
-    customer_data['password'] = generate_password_hash(customer_data['password'])
+    if 'password' in customer_data and customer_data['password']:
+        customer_data['password'] = generate_password_hash(customer_data['password'])
 
     for key, value in customer_data.items():
         setattr(customer, key, value)
@@ -314,13 +316,13 @@ def get_top_customers():
     customer_data = db.session.query(
         Customers.first_name,
         Customers.last_name,
-        func.sum(ServiceTickets.price).label("total_spent")).join(ServiceTickets).group_by(Customers.id).order_by(func.sum(ServiceTickets.price).desc()).all()
+        func.sum(ServiceTickets.price).label("total_spent")).join(ServiceTickets).group_by(Customers.id, Customers.first_name, Customers.last_name).order_by(func.sum(ServiceTickets.price).desc()).all()
 
     results = [
         {
             "first_name": row.first_name,
             "last_name": row.last_name,
-            "total_spent": float(row.total_spent)
+            "total_spent": float(row.total_spent) if row.total_spent is not None else 0.0
         }
         for row in customer_data
     ]

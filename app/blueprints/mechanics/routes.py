@@ -8,63 +8,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import func
 from app.blueprints.tickets.schemas import service_tickets_schema
 
-# Swag Defs
-# Create/Update Payload
-MechCreatePayload = {
-    "MechCreatePayload": {
-        "type": "object",
-        "properties": {
-            "first_name": {"type": "string"},
-            "last_name": {"type": "string"},
-            "email": {"type": "string"},
-            "salary": {"type": "number"},
-            "address": {"type": "string"},
-            "password": {"type": "string"}
-        },
-        "required": ["first_name", "last_name", "email", "salary", "address", "password"]
-    }
-}
-
-MechUpdatePayload = {
-    "MechUpdatePayload": {
-        "type": "object",
-        "properties": {
-            "first_name": {"type": "string"},
-            "last_name": {"type": "string"},
-            "email": {"type": "string"},
-            "salary": {"type": "number"},
-            "address": {"type": "string"},
-            "password": {"type": "string"}
-        }
-    }
-}
-
-MechLoginPayload = {
-    "MechLoginPayload": {
-        "type": "object",
-        "properties": {
-            "email": {"type": "string"},
-            "password": {"type": "string"}
-        },
-        "required": ["email", "password"]
-    }
-}
-
-MechResponse = {
-    "MechResponse": {
-        "type": "object",
-        "properties": {
-            "address": {"type": "string"},
-            "email": {"type": "string"},
-            "first_name": {"type": "string"},
-            "id": {"type": "integer"},
-            "last_name": {"type": "string"},
-            "role": {"type": "string"},
-            "salary": {"type": "number"}
-        }
-    }
-}
-
+# NOTE: Swagger definitions (like MechResponse) have been moved to app/app_factory.py
+# to resolve "Could not resolve reference" errors by making them globally available.
 
 # Login Route for Mechanics
 @mechanics_bp.route("/login", methods=["POST"])
@@ -82,7 +27,6 @@ def login():
       - in: body
         name: body
         schema:
-          id: MechLoginPayload
           $ref: '#/definitions/MechLoginPayload'
     responses:
       200:
@@ -131,7 +75,6 @@ def create_mechanic():
       - in: body
         name: body
         schema:
-          id: MechCreatePayload
           $ref: '#/definitions/MechCreatePayload'
     responses:
       201:
@@ -235,7 +178,6 @@ def update_mechanic(mechanic_id):
       - in: body
         name: body
         schema:
-          id: MechUpdatePayload
           $ref: '#/definitions/MechUpdatePayload'
     responses:
       200:
