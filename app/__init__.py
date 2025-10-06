@@ -7,7 +7,7 @@ from .blueprints.tickets import service_tickets_bp
 from .blueprints.parts import parts_bp
 from flasgger import Swagger
 from config import DevelopmentConfig, TestConfig, ProductionConfig 
-import os # Ensure os is imported if it wasn't already
+import os 
 
 def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
@@ -46,9 +46,10 @@ def create_app(config_class=DevelopmentConfig):
             }
         },
         # --- START SWAGGER DEPLOYMENT CONFIG CHANGES ---
-        "host": "YOUR_LIVE_RENDER_HOST_URL", # IMPORTANT: Replace this placeholder with your live Render URL (e.g., my-flask-app.onrender.com)
+        # *** LIVE RENDER HOST URL INSERTED HERE ***
+        "host": "api-deployment-and-ci-cd-pipeline.onrender.com", 
         "schemes": [
-            "https" # Assignment requires changing schemes from http/https to https only
+            "https" 
         ],
         # --- END SWAGGER DEPLOYMENT CONFIG CHANGES ---
         
