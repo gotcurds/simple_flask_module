@@ -7,6 +7,7 @@ from .blueprints.tickets import service_tickets_bp
 from .blueprints.parts import parts_bp
 from flasgger import Swagger
 from config import DevelopmentConfig, TestConfig, ProductionConfig 
+import os # Ensure os is imported if it wasn't already
 
 def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
@@ -44,10 +45,13 @@ def create_app(config_class=DevelopmentConfig):
                 "description": "Bearer token is required for all protected routes."
             }
         },
+        # --- START SWAGGER DEPLOYMENT CONFIG CHANGES ---
+        "host": "YOUR_LIVE_RENDER_HOST_URL", # IMPORTANT: Replace this placeholder with your live Render URL (e.g., my-flask-app.onrender.com)
         "schemes": [
-            "http",
-            "https"
+            "https" # Assignment requires changing schemes from http/https to https only
         ],
+        # --- END SWAGGER DEPLOYMENT CONFIG CHANGES ---
+        
         # ALL global definitions are placed here to resolve all cross-blueprint references.
         "definitions": {
             
